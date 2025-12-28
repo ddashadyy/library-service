@@ -57,31 +57,28 @@ jobs:
           echo 'exec llvm-cov gcov "$@"' >> llvm-gcov.sh
           chmod +x llvm-gcov.sh
           
-          lcov --gcov-tool "$PWD/llvm-gcov.sh" --capture --directory build --output-file build/coverage.info --ignore-errors gcov
+          lcov --gcov-tool "$PWD/llvm-gcov.sh" \
+            --capture \
+            --directory build \
+            --output-file build/coverage.info \
+            --ignore-errors gcov,mismatch,unused
           
-          rm llvm-gcov.sh
-          
-          lcov --remove build-debug/coverage.info \
-          '/usr/*' \
-          '*/_deps/*' \
-          '*/tests/*' \
-          '*/third_party/*' \
-          '*/generated/*' \
-          '*/src/repository/*' \
-          '*/include/repository/*' \
-          '*/include/structs/*' \
-          --output-file build-debug/coverage_cleaned.info
+          ls -lh build/coverage.info
         
+          lcov --remove build-debug/coverage.info \
+            '/usr/*' \
+            '*/_deps/*' \
+            '*/tests/*' \
+            '*/third_party/*' \
+            '*/generated/*' \
+            '*/src/repository/*' \
+            '*/include/repository/*' \
+            '*/include/structs/*' \
+            --output-file build-debug/coverage_cleaned.info
+        
+          genhtml build/coverage_cleaned.info \
+            --output-directory coverage_report \
+            --ignore-errors gcov,mismatch
           
-          genhtml build/coverage_cleaned.info --output-directory coverage_report
-          
-          echo "------------------------------------------------------------------"
-          echo "Coverage report generated in coverage_report/"
-          echo "------------------------------------------------------------------"
+          echo "Coverage report generated."
 
-      - name: Upload Coverage Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: library-service-coverage
-          path: coverage_report/
-          retention-days: 7
