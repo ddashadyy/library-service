@@ -1,0 +1,117 @@
+#include <repository/postgres_manager.hpp>
+
+#include <userver/storages/postgres/io/enum_types.hpp>
+#include <userver/storages/postgres/io/io_fwd.hpp>
+#include <userver/utils/trivial_map.hpp>
+
+#include <library/library_service.usrv.pb.hpp>
+
+template <>
+struct userver::storages::postgres::io::CppToUserPg<::library::GameStatus>
+{
+    static constexpr DBTypeName postgres_name = "library.game_status";
+    static constexpr USERVER_NAMESPACE::utils::TrivialBiMap enumerators =
+        [](auto selector) {
+            return selector()
+                .Case("unspecified",
+                      ::library::GameStatus::GAME_STATUS_UNSPECIFIED)
+                .Case("plan", ::library::GameStatus::GAME_STATUS_PLAN)
+                .Case("playing", ::library::GameStatus::GAME_STATUS_PLAYING)
+                .Case("dropped", ::library::GameStatus::GAME_STATUS_DROPPED)
+                .Case("completed", ::library::GameStatus::GAME_STATUS_COMPLETED)
+                .Case("waiting", ::library::GameStatus::GAME_STATUS_WAITING);
+        };
+};
+
+template <>
+struct userver::storages::postgres::io::CppToUserPg<entities::GameStatus>
+{
+    static constexpr DBTypeName postgres_name = "library.game_status";
+    static constexpr USERVER_NAMESPACE::utils::TrivialBiMap enumerators =
+        [](auto selector) {
+            return selector()
+                .Case("unspecified", entities::GameStatus::kUnspecified)
+                .Case("plan", entities::GameStatus::kPlan)
+                .Case("playing", entities::GameStatus::kPlaying)
+                .Case("dropped", entities::GameStatus::kDropped)
+                .Case("completed", entities::GameStatus::kCompleted)
+                .Case("waiting", entities::GameStatus::kWaiting);
+        };
+};
+
+namespace pg {
+
+const userver::storages::postgres::Query kUpsertLibraryEntry{
+    "INSERT INTO library.library_entries ("
+    "  user_id, game_id, status"
+    ") "
+    "VALUES ("
+    "  $1, $2, $3::library.game_status"
+    ") "
+    "ON CONFLICT (user_id, game_id) DO UPDATE SET "
+    "  status = EXCLUDED.status, "
+    "  created_at = NOW() "
+    "  updated_at = NOW() "
+    "RETURNING "
+    "  user_id, game_id, status"
+};
+
+const userver::storages::postgres::Query kGetLibraryEntries{
+    "SELECT user_id, game_id, status, created_at, updated_at "
+    "FROM library.library_entries "
+    "WHERE user_id = $1 "
+    "AND ($2::library.game_status IS NULL OR status = $2) "
+    "ORDER BY updated_at DESC "
+    "LIMIT $3 OFFSET $4"
+};
+
+PostgresManager::PostgresManager(
+    std::shared_ptr<userver::storages::postgres::Cluster> cluster)
+    : pg_cluster_(std::move(cluster))
+{}
+
+PostgresManager::LibraryPostgres
+PostgresManager::CreateLibraryEntry(std::string_view user_id,
+                                    std::string_view game_id,
+                                    std::string_view game_status) const
+{
+    try
+    {
+        const auto kResult = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            kUpsertLibraryEntry, user_id, game_id, game_status);
+
+        return kResult.AsSingleRow<LibraryPostgres>(
+            userver::storages::postgres::kRowTag);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR() << e.what() << '\n';
+    }
+
+    return {};
+}
+
+PostgresManager::LibrariesPostgres
+PostgresManager::GetLibraryEntries(std::string_view user_id,
+                                   std::string_view status, std::int32_t limit,
+                                   std::int32_t offset) const
+{
+    try
+    {
+        const auto kResult = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            kGetLibraryEntries, user_id, status, limit, offset);
+
+        return kResult.AsContainer<LibrariesPostgres>(
+            userver::storages::postgres::kRowTag);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR() << e.what() << '\n';
+    }
+
+    return {};
+}
+
+} // namespace pg
