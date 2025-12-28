@@ -82,7 +82,7 @@ coverage:
 		'*/include/structs/*' \
 		--output-file build-debug/coverage_cleaned.info
 	
-	genhtml build-debug/coverage_cleaned.info --output-directory $(COVERAGE_OUTPUT_DIR) --ignore-errors source
+	genhtml build-debug/coverage_cleaned.info --output-directory coverage_report
 	
 	@echo "------------------------------------------------------------------"
 	@echo "Coverage report generated: file://$(shell pwd)/$(COVERAGE_OUTPUT_DIR)/index.html"

@@ -17,3 +17,4 @@ CMakeUserPresets.json
 generated
 .env
 third_party/*
+coverage_report
