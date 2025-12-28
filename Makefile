@@ -48,6 +48,46 @@ dist-clean:
 	rm -rf .vscode/.cache
 	rm -rf .vscode/compile_commands.json
 
+.PHONY: coverage
+coverage:
+	cmake --preset debug $(CMAKE_OPTS) \
+		-DENABLE_COVERAGE=ON \
+		-DUSERVER_FEATURE_STACK_USAGE_MONITOR=OFF \
+		-DCMAKE_CXX_FLAGS="--coverage" \
+		-DCMAKE_C_FLAGS="--coverage"
+	
+	cmake --build build-debug -j $(NPROCS)
+	
+	cd build-debug && \
+	USERVER_ENABLE_STACK_USAGE_MONITOR=0 \
+	USERVER_GTEST_ENABLE_STACK_USAGE_MONITOR=0 \
+	ctest -V || true
+	
+	echo '#!/bin/bash' > llvm-gcov.sh
+	echo 'exec llvm-cov gcov "$$@"' >> llvm-gcov.sh
+	chmod +x llvm-gcov.sh
+	
+	lcov --gcov-tool $(shell pwd)/llvm-gcov.sh --capture --directory build-debug --output-file build-debug/coverage.info --ignore-errors gcov
+	
+	rm llvm-gcov.sh
+	
+	lcov --remove build-debug/coverage.info \
+		'/usr/*' \
+		'*/_deps/*' \
+		'*/tests/*' \
+		'*/third_party/*' \
+		'*/generated/*' \
+		'*/src/repository/*' \
+		'*/include/repository/*' \
+		'*/include/structs/*' \
+		--output-file build-debug/coverage_cleaned.info
+	
+	genhtml build-debug/coverage_cleaned.info --output-directory $(COVERAGE_OUTPUT_DIR) --ignore-errors source
+	
+	@echo "------------------------------------------------------------------"
+	@echo "Coverage report generated: file://$(shell pwd)/$(COVERAGE_OUTPUT_DIR)/index.html"
+	@echo "------------------------------------------------------------------"
+
 # Install
 .PHONY: $(addprefix install-, $(PRESETS))
 $(addprefix install-, $(PRESETS)): install-%: build-%

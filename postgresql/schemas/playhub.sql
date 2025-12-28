@@ -19,11 +19,9 @@ CREATE TABLE IF NOT EXISTS playhub.library (
     game_status library.game_status NOT NULL DEFAULT 'unspecified',
 
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
 
     PRIMARY KEY (user_id, game_id)
-
-    CONSTRAINT uq_library_game_id UNIQUE (game_id)
 );
 
 CREATE INDEX idx_library_entries_user_status ON library.library_entries(user_id, game_status);
