@@ -46,7 +46,7 @@ const userver::storages::postgres::Query kUpsertLibraryEntry{
     "  user_id, game_id, game_status"
     ") "
     "VALUES ("
-    "  $1, $2, $3::library.game_status"
+    "  $1, $2, $3::playhub.game_status"
     ") "
     "ON CONFLICT (user_id, game_id) DO UPDATE SET "
     "  game_status = EXCLUDED.game_status, "
