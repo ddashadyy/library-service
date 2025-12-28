@@ -1,0 +1,87 @@
+name: Library Service Tests & Coverage
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/userver-framework/ubuntu-22.04-userver-pg-dev:latest
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fix git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y lcov git llvm
+
+      - name: Clone Proto Repository
+        run: |
+          mkdir -p third_party
+          git clone https://github.com/viktoralyoshin/playhub-proto.git third_party/playhub-proto
+
+      - name: Configure CMake (Coverage Enabled)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DUSERVER_FEATURE_GRPC=ON \
+            -DUSERVER_FEATURE_POSTGRESQL=ON \
+            -DENABLE_COVERAGE=ON \
+            -DUSERVER_FEATURE_STACK_USAGE_MONITOR=OFF \
+            -DCMAKE_CXX_FLAGS="--coverage" \
+            -DCMAKE_C_FLAGS="--coverage" \
+            -GNinja
+
+      - name: Build
+        run: cmake --build build -j $(nproc)
+
+      - name: Run Tests
+        working-directory: build
+        env:
+          USERVER_ENABLE_STACK_USAGE_MONITOR: 0
+          USERVER_GTEST_ENABLE_STACK_USAGE_MONITOR: 0
+        run: ctest -V
+
+      - name: Generate Coverage Report
+        run: |
+          echo '#!/bin/bash' > llvm-gcov.sh
+          echo 'exec llvm-cov gcov "$@"' >> llvm-gcov.sh
+          chmod +x llvm-gcov.sh
+          
+          lcov --gcov-tool "$PWD/llvm-gcov.sh" --capture --directory build --output-file build/coverage.info --ignore-errors gcov
+          
+          rm llvm-gcov.sh
+          
+          lcov --remove build-debug/coverage.info \
+          '/usr/*' \
+          '*/_deps/*' \
+          '*/tests/*' \
+          '*/third_party/*' \
+          '*/generated/*' \
+          '*/src/repository/*' \
+          '*/include/repository/*' \
+          '*/include/structs/*' \
+          --output-file build-debug/coverage_cleaned.info
+        
+          
+          genhtml build/coverage_cleaned.info --output-directory coverage_report
+          
+          echo "------------------------------------------------------------------"
+          echo "Coverage report generated in coverage_report/"
+          echo "------------------------------------------------------------------"
+
+      - name: Upload Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-service-coverage
+          path: coverage_report/
+          retention-days: 7
