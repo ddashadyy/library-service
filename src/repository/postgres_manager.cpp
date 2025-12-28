@@ -9,7 +9,7 @@
 template <>
 struct userver::storages::postgres::io::CppToUserPg<::library::GameStatus>
 {
-    static constexpr DBTypeName postgres_name = "library.game_status";
+    static constexpr DBTypeName postgres_name = "playhub.game_status";
     static constexpr USERVER_NAMESPACE::utils::TrivialBiMap enumerators =
         [](auto selector) {
             return selector()
@@ -26,7 +26,7 @@ struct userver::storages::postgres::io::CppToUserPg<::library::GameStatus>
 template <>
 struct userver::storages::postgres::io::CppToUserPg<entities::GameStatus>
 {
-    static constexpr DBTypeName postgres_name = "library.game_status";
+    static constexpr DBTypeName postgres_name = "playhub.game_status";
     static constexpr USERVER_NAMESPACE::utils::TrivialBiMap enumerators =
         [](auto selector) {
             return selector()
