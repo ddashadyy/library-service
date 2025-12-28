@@ -1,0 +1,13 @@
+worker-threads: 4
+worker-fs-threads: 2
+logger-level: info
+
+is-testing: false
+
+server-port: 8083
+
+grpc-server-port: 50054
+
+# change to URI of your postgres database
+pg-connection: postgresql://user:user@postgres-library:5432/playhub-library
+# env-file: /app/.env
