@@ -43,21 +43,21 @@ namespace pg {
 
 const userver::storages::postgres::Query kUpsertLibraryEntry{
     "INSERT INTO library.library_entries ("
-    "  user_id, game_id, status"
+    "  user_id, game_id, game_status"
     ") "
     "VALUES ("
     "  $1, $2, $3::library.game_status"
     ") "
     "ON CONFLICT (user_id, game_id) DO UPDATE SET "
-    "  status = EXCLUDED.status, "
+    "  game_status = EXCLUDED.game_status, "
     "  created_at = NOW() "
     "  updated_at = NOW() "
     "RETURNING "
-    "  user_id, game_id, status"
+    "  user_id, game_id, game_status"
 };
 
 const userver::storages::postgres::Query kGetLibraryEntries{
-    "SELECT user_id, game_id, status, created_at, updated_at "
+    "SELECT user_id, game_id, game_status, created_at, updated_at "
     "FROM library.library_entries "
     "WHERE user_id = $1 "
     "ORDER BY updated_at DESC "
