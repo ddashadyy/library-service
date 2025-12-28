@@ -42,7 +42,7 @@ struct userver::storages::postgres::io::CppToUserPg<entities::GameStatus>
 namespace pg {
 
 const userver::storages::postgres::Query kUpsertLibraryEntry{
-    "INSERT INTO library.library_entries ("
+    "INSERT INTO playhub.library ("
     "  user_id, game_id, game_status"
     ") "
     "VALUES ("
@@ -53,12 +53,12 @@ const userver::storages::postgres::Query kUpsertLibraryEntry{
     "  created_at = NOW(), "
     "  updated_at = NOW() "
     "RETURNING "
-    "  user_id, game_id, game_status"
+    "  user_id, game_id, game_status, created_at, updated_at"
 };
 
 const userver::storages::postgres::Query kGetLibraryEntries{
     "SELECT user_id, game_id, game_status, created_at, updated_at "
-    "FROM library.library_entries "
+    "FROM playhub.library "
     "WHERE user_id = $1 "
     "ORDER BY updated_at DESC "
     "LIMIT $2 OFFSET $3"
