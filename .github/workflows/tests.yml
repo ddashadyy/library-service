@@ -61,11 +61,11 @@ jobs:
             --capture \
             --directory build \
             --output-file build/coverage.info \
-            --ignore-errors gcov,mismatch,unused
+            --ignore-errors gcov
           
           ls -lh build/coverage.info
-        
-          lcov --remove build-debug/coverage.info \
+          
+          lcov --remove build/coverage.info \
             '/usr/*' \
             '*/_deps/*' \
             '*/tests/*' \
@@ -74,11 +74,12 @@ jobs:
             '*/src/repository/*' \
             '*/include/repository/*' \
             '*/include/structs/*' \
-            --output-file build-debug/coverage_cleaned.info
+            --output-file build/coverage_cleaned.info \
+            --ignore-errors gcov
         
+          
           genhtml build/coverage_cleaned.info \
             --output-directory coverage_report \
-            --ignore-errors gcov,mismatch
+            --ignore-errors gcov
           
           echo "Coverage report generated."
-
