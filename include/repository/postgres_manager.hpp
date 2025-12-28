@@ -15,9 +15,10 @@ public:
                                        std::string_view game_id,
                                        std::string_view) const override;
     LibrariesPostgres GetLibraryEntries(std::string_view user_id,
-                                        std::string_view status,
                                         std::int32_t limit,
                                         std::int32_t offset) const override;
+
+    std::int32_t GetLibraryStats(std::string_view user_id) const override;
 
 private:
     userver::storages::postgres::ClusterPtr pg_cluster_;

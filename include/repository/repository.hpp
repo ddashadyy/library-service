@@ -19,9 +19,9 @@ public:
     CreateLibraryEntry(std::string_view user_id, std::string_view game_id,
                        std::string_view game_status) const = 0;
     virtual LibrariesPostgres GetLibraryEntries(std::string_view user_id,
-                                                std::string_view status,
                                                 std::int32_t limit,
                                                 std::int32_t offset) const = 0;
+    virtual std::int32_t GetLibraryStats(std::string_view user_id) const = 0;
 };
 
 } // namespace pg

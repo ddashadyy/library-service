@@ -60,9 +60,14 @@ const userver::storages::postgres::Query kGetLibraryEntries{
     "SELECT user_id, game_id, status, created_at, updated_at "
     "FROM library.library_entries "
     "WHERE user_id = $1 "
-    "AND ($2::library.game_status IS NULL OR status = $2) "
     "ORDER BY updated_at DESC "
-    "LIMIT $3 OFFSET $4"
+    "LIMIT $2 OFFSET $3"
+};
+
+const userver::storages::postgres::Query kGetLibraryStats{
+    "SELECT COUNT(*) "
+    "FROM playhub.library "
+    "WHERE user_id = $1"
 };
 
 PostgresManager::PostgresManager(
@@ -93,15 +98,14 @@ PostgresManager::CreateLibraryEntry(std::string_view user_id,
 }
 
 PostgresManager::LibrariesPostgres
-PostgresManager::GetLibraryEntries(std::string_view user_id,
-                                   std::string_view status, std::int32_t limit,
+PostgresManager::GetLibraryEntries(std::string_view user_id, std::int32_t limit,
                                    std::int32_t offset) const
 {
     try
     {
         const auto kResult = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
-            kGetLibraryEntries, user_id, status, limit, offset);
+            kGetLibraryEntries, user_id, limit, offset);
 
         return kResult.AsContainer<LibrariesPostgres>(
             userver::storages::postgres::kRowTag);
@@ -112,6 +116,24 @@ PostgresManager::GetLibraryEntries(std::string_view user_id,
     }
 
     return {};
+}
+
+std::int32_t PostgresManager::GetLibraryStats(std::string_view user_id) const
+{
+    try
+    {
+        const auto result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            kGetLibraryStats, user_id);
+
+        return result.AsSingleRow<std::int64_t>();
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR() << "Error getting library stats: " << e.what();
+    }
+
+    return 0;
 }
 
 } // namespace pg

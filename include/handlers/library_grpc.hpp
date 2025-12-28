@@ -18,6 +18,10 @@ public:
     GetUserLibrary(CallContext& context,
                    ::library::GetUserLibraryRequest&& request) override;
 
+    GetLibraryStatsResult
+    GetLibraryStats(CallContext& context,
+                    ::library::GetLibraryStatsRequest&& request) override;
+
 private:
     void FillLibraryEntry(const entities::LibraryPostgres& db_entry,
                           ::library::LibraryEntry& proto);

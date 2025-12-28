@@ -69,8 +69,7 @@ LibraryService::GetUserLibrary(CallContext& context,
     try
     {
         const auto db_entries = pg_manager_.GetLibraryEntries(
-            request.user_id(), utils::GameStatusToString(request.status()),
-            request.limit(), request.offset());
+            request.user_id(), request.limit(), request.offset());
 
         ::library::GetUserLibraryResponse response;
         response.mutable_entries()->Reserve(db_entries.size());
@@ -86,6 +85,31 @@ LibraryService::GetUserLibrary(CallContext& context,
     catch (const std::exception& e)
     {
         LOG_ERROR() << "Failed to get user library: " << e.what();
+        return grpc::Status(grpc::StatusCode::INTERNAL, "Database error");
+    }
+}
+
+::library::LibraryServiceBase::GetLibraryStatsResult
+LibraryService::GetLibraryStats(CallContext& context,
+                                ::library::GetLibraryStatsRequest&& request)
+{
+    if (request.user_id().empty())
+        return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
+                            "user_id cannot be empty");
+
+    try
+    {
+        const auto count = pg_manager_.GetLibraryStats(request.user_id());
+
+        ::library::GetLibraryStatsResponse response;
+        response.set_count_library_entries(count);
+
+        return response;
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR() << "Failed to get stats for user " << request.user_id()
+                    << ": " << e.what();
         return grpc::Status(grpc::StatusCode::INTERNAL, "Database error");
     }
 }
@@ -110,10 +134,10 @@ LibraryServiceComponent::LibraryServiceComponent(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : userver::ugrpc::server::ServiceComponentBase(config, context),
-      pg_manager_(
-          context
-              .FindComponent<userver::components::Postgres>("playhub-library-db")
-              .GetCluster()),
+      pg_manager_(context
+                      .FindComponent<userver::components::Postgres>(
+                          "playhub-library-db")
+                      .GetCluster()),
       service_(config["library-prefix"].As<std::string>(), pg_manager_)
 {
     RegisterService(service_);
