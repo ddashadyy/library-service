@@ -46,7 +46,7 @@ const userver::storages::postgres::Query kUpsertLibraryEntry{
     "  user_id, game_id, game_status"
     ") "
     "VALUES ("
-    "  $1, $2, $3::playhub.game_status"
+    "  $1::uuid, $2::uuid, $3::playhub.game_status"
     ") "
     "ON CONFLICT (user_id, game_id) DO UPDATE SET "
     "  game_status = EXCLUDED.game_status, "
@@ -59,7 +59,7 @@ const userver::storages::postgres::Query kUpsertLibraryEntry{
 const userver::storages::postgres::Query kGetLibraryEntries{
     "SELECT user_id, game_id, game_status, created_at, updated_at "
     "FROM playhub.library "
-    "WHERE user_id = $1 "
+    "WHERE user_id = $1::uuid "
     "ORDER BY updated_at DESC "
     "LIMIT $2 OFFSET $3"
 };
@@ -67,7 +67,7 @@ const userver::storages::postgres::Query kGetLibraryEntries{
 const userver::storages::postgres::Query kGetLibraryStats{
     "SELECT COUNT(*) "
     "FROM playhub.library "
-    "WHERE user_id = $1"
+    "WHERE user_id = $1::uuid"
 };
 
 PostgresManager::PostgresManager(
